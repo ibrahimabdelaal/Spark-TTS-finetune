@@ -172,3 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+LJSpeech-1.1
+output_prompt
+outputs
+pretrained_models
