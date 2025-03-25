@@ -16,7 +16,7 @@ pip install -r requirements.txt
 python -m src.download_pretrain
 ```
 **Ljspeech Download**
-Here I use Ljspeech dataset as an example. You can use any other dataset, any language. Just format the data to Ljspeech format.
+- Here I use Ljspeech dataset as an example. You can use any other dataset, any language. Just format the data to Ljspeech format.
 ```sh
 bash download_ljspeech.sh
 ```
