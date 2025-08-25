@@ -8,6 +8,14 @@ import torch
 import traceback
 from pathlib import Path
 from tqdm import tqdm
+import sys
+
+# MODIFICATION: Add the parent directory to the system path.
+# This allows the script to find the 'sparktts' module when run directly.
+# This resolves the ModuleNotFoundError.
+script_dir = Path(__file__).parent.resolve()
+sys.path.append(str(script_dir.parent))
+
 
 # These imports will work because the script is run after the repo is installed.
 from datasets import load_dataset
@@ -90,8 +98,8 @@ def main(args):
     """Main function to run the data processing."""
     device = f"cuda:0" if torch.cuda.is_available() else "cpu"
     
-    script_dir = Path(__file__).parent.resolve()
-    model_path = script_dir / "../../pretrained_models" / args.model_name
+    # The model path is now relative to the repo root, not the script itself.
+    model_path = Path("pretrained_models") / args.model_name
     
     if not model_path.exists():
         print(f"FATAL: Model directory not found at expected path: {model_path}")
