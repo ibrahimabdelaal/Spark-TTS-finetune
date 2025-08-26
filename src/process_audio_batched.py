@@ -114,7 +114,7 @@ def main(args):
         token=args.hf_token
     ).shard(num_shards=args.shard_count, index=args.shard_index)
     
-    print(f"Loaded {len(dataset_shard)} samples for this shard.")
+    print(f"Loaded here {len(dataset_shard)} samples for this shard.")
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
 
