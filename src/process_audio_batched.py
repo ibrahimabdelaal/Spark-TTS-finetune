@@ -111,7 +111,7 @@ def main(args):
     dataset_shard = load_dataset(
         args.hf_dataset_name, 
         split="train", 
-        use_auth_token=args.hf_token
+        token=args.hf_token
     ).shard(num_shards=args.shard_count, index=args.shard_index)
     
     print(f"Loaded {len(dataset_shard)} samples for this shard.")
