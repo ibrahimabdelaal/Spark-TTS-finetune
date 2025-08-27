@@ -9,6 +9,10 @@ import traceback
 from pathlib import Path
 from tqdm import tqdm
 import sys
+import io
+
+# THE FIX: Import soundfile for manual decoding
+import soundfile as sf
 
 # MODIFICATION: Add the parent directory to the system path.
 # This allows the script to find the 'sparktts' module when run directly.
@@ -98,7 +102,6 @@ def main(args):
     """Main function to run the data processing."""
     device = f"cuda:0" if torch.cuda.is_available() else "cpu"
     
-    # The model path is now relative to the repo root, not the script itself.
     model_path = Path("pretrained_models") / args.model_name
     
     if not model_path.exists():
@@ -108,10 +111,12 @@ def main(args):
     processor = AudioProcessor(model_path, device)
 
     print(f"Loading dataset shard {args.shard_index}/{args.shard_count}...")
+    # THE FIX: Add decode=False to load raw audio bytes and bypass torchcodec
     dataset_shard = load_dataset(
         args.hf_dataset_name, 
         split="train", 
-        token=args.hf_token
+        token=args.hf_token,
+        decode=False
     ).shard(num_shards=args.shard_count, index=args.shard_index)
     
     print(f"Loaded here {len(dataset_shard)} samples for this shard.")
@@ -119,14 +124,29 @@ def main(args):
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
 
     with open(args.output_path, "w", encoding="utf-8") as f_out:
-        # Create a list from the dataset shard to enable batching with indices
         shard_list = list(dataset_shard)
         for i in tqdm(range(0, len(shard_list), args.batch_size), desc=f"Processing on GPU {args.shard_index}"):
             batch = shard_list[i:i + args.batch_size]
-            # The 'audio' column in HF datasets contains a dict with 'array' and 'sampling_rate'
-            audio_arrays = [item['audio']['array'] for item in batch]
-            texts = [item['text'] for item in batch]
             
+            # THE FIX: Manually decode audio from bytes and handle errors
+            audio_arrays = []
+            texts = []
+            for item in batch:
+                audio_data = item.get('audio')
+                text_data = item.get('text')
+
+                if not audio_data or not audio_data.get('bytes') or not text_data:
+                    print(f"Warning: Skipping item due to missing audio bytes or text.")
+                    continue
+                
+                try:
+                    # Use soundfile to read the audio bytes from memory
+                    wav, sr = sf.read(io.BytesIO(audio_data['bytes']))
+                    audio_arrays.append(wav)
+                    texts.append(text_data)
+                except Exception as e:
+                    print(f"Warning: Failed to decode audio for item. Skipping. Error: {e}")
+
             if not audio_arrays:
                 continue
             
