@@ -10,6 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 import sys
 import io
+from datasets import load_dataset, Features, Audio, Value
 
 # THE FIX: Import soundfile for manual decoding
 import soundfile as sf
@@ -112,11 +113,16 @@ def main(args):
 
     print(f"Loading dataset shard {args.shard_index}/{args.shard_count}...")
     # THE FIX: Add decode=False to load raw audio bytes and bypass torchcodec
+    feature_set = Features({
+    "text": Value("string"),
+    "duration": Value("float64"),
+    "audio": Audio(decode=False)  # This is the key part to skip decoding
+})
     dataset_shard = load_dataset(
         args.hf_dataset_name, 
         split="train", 
         token=args.hf_token,
-        decode=False
+    features=feature_set,
     ).shard(num_shards=args.shard_count, index=args.shard_index)
     
     print(f"Loaded here {len(dataset_shard)} samples for this shard.")
